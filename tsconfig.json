@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
     "outDir": "build",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "module": "es2022",
+    "target": "es2022",
+	"moduleResolution": "node"
   }
 }
