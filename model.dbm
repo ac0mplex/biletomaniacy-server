@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+CAUTION: Do not modify this file unless you know what you are doing.
+ Unexpected results may occur if the code is changed deliberately.
+-->
+<dbmodel pgmodeler-ver="1.0.0-beta" use-changelog="false" last-position="0,105" last-zoom="1" max-obj-count="4"
+	 default-schema="public" default-owner="postgres"
+	 default-tablespace="pg_default"
+	 layers="Default layer"
+	 active-layers="0"
+	 layer-name-colors="#000000"
+	 layer-rect-colors="#b4b4b4"
+	 show-layer-names="false" show-layer-rects="false">
+<database name="biletomaniacy" encoding="UTF8" lc-collate="en_US.UTF-8" lc-ctype="en_US.UTF-8" is-template="false" allow-conns="true">
+</database>
+
+<schema name="public" layers="0" fill-color="#e1e1e1" sql-disabled="true">
+</schema>
+
+<table name="user" layers="0" collapse-mode="2" max-obj-count="6" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tablespace name="pg_default"/>
+	<position x="80" y="220"/>
+	<column name="id" not-null="true">
+		<type name="serial" length="0"/>
+	</column>
+	<column name="name" not-null="true">
+		<type name="text" length="0"/>
+	</column>
+	<column name="password" not-null="true">
+		<type name="text" length="0"/>
+	</column>
+	<column name="salt" not-null="true">
+		<type name="text" length="0"/>
+	</column>
+	<column name="admin" not-null="true" default-value="False">
+		<type name="boolean" length="0"/>
+	</column>
+	<constraint name="user_pk" type="pk-constr" table="public.&quot;user&quot;">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="name_unique" type="uq-constr" table="public.&quot;user&quot;">
+		<tablespace name="pg_default"/>
+		<columns names="name" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="concert" layers="0" collapse-mode="2" max-obj-count="4" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tablespace name="pg_default"/>
+	<position x="460" y="220"/>
+	<column name="id" not-null="true">
+		<type name="serial" length="0"/>
+	</column>
+	<column name="name" not-null="true">
+		<type name="text" length="0"/>
+	</column>
+	<column name="location">
+		<type name="text" length="0"/>
+	</column>
+	<column name="date" not-null="true">
+		<type name="timestamp" length="0"/>
+	</column>
+	<constraint name="concert_pk" type="pk-constr" table="public.concert">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="ticket" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<tablespace name="pg_default"/>
+	<position x="460" y="540"/>
+	<column name="id" not-null="true">
+		<type name="serial" length="0"/>
+	</column>
+	<column name="row">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="column">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="payed" not-null="true" default-value="false">
+		<type name="boolean" length="0"/>
+	</column>
+	<column name="concert_id" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="user_id">
+		<type name="integer" length="0"/>
+	</column>
+	<constraint name="ticket_pk" type="pk-constr" table="public.ticket">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<genericsql name="sessions">
+	<definition> <![CDATA[CREATE TABLE "session" (
+  "sid" varchar NOT NULL COLLATE "default",
+  "sess" json NOT NULL,
+  "expire" timestamp(6) NOT NULL
+)
+WITH (OIDS=FALSE);
+
+ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+
+CREATE INDEX "IDX_session_expire" ON "session" ("expire");]]> </definition>
+</genericsql>
+
+<constraint name="concert_fk" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="NO ACTION" del-action="CASCADE" ref-table="public.concert" table="public.ticket">
+	<columns names="concert_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="user_fk" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="NO ACTION" del-action="SET NULL" ref-table="public.&quot;user&quot;" table="public.ticket">
+	<columns names="user_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<relationship name="rel_ticket_concert" type="relfk" layers="0"
+	 src-table="public.ticket"
+	 dst-table="public.concert" reference-fk="concert_fk"
+	 src-required="false" dst-required="true"/>
+
+<relationship name="rel_ticket_user" type="relfk" layers="0"
+	 src-table="public.ticket"
+	 dst-table="public.&quot;user&quot;" reference-fk="user_fk"
+	 src-required="false" dst-required="false">
+	<label ref-type="name-label">
+		<position x="0" y="0"/>
+	</label>
+</relationship>
+
+</dbmodel>

@@ -22,8 +22,11 @@ CREATE TABLE public."user" (
 	id serial NOT NULL,
 	name text NOT NULL,
 	password text NOT NULL,
+	salt text NOT NULL,
 	admin boolean NOT NULL DEFAULT False,
-	CONSTRAINT user_pk PRIMARY KEY (id)
+	CONSTRAINT user_pk PRIMARY KEY (id),
+	CONSTRAINT name_unique UNIQUE (name)
+	USING INDEX TABLESPACE pg_default
 )
 TABLESPACE pg_default;
 -- ddl-end --
@@ -58,6 +61,19 @@ CREATE TABLE public.ticket (
 TABLESPACE pg_default;
 -- ddl-end --
 ALTER TABLE public.ticket OWNER TO postgres;
+-- ddl-end --
+
+-- object: sessions | type: Generic SQL Object --
+CREATE TABLE "session" (
+  "sid" varchar NOT NULL COLLATE "default",
+  "sess" json NOT NULL,
+  "expire" timestamp(6) NOT NULL
+)
+WITH (OIDS=FALSE);
+
+ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+
+CREATE INDEX "IDX_session_expire" ON "session" ("expire");
 -- ddl-end --
 
 -- object: concert_fk | type: CONSTRAINT --
