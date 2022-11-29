@@ -42,6 +42,10 @@ app.use(
 app.post('/register', async (request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
+	if (request.body.data == null) {
+		return response.sendStatus(403);
+	}
+
 	const { name, password } = request.body.data;
 
 	if (name == null || password == null) {
@@ -77,6 +81,10 @@ app.post('/register', async (request, response) => {
 
 app.post('/login', async (request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+	if (request.body.data == null) {
+		return response.sendStatus(403);
+	}
 
 	const { name, password } = request.body.data;
 
@@ -156,6 +164,10 @@ app.get('/users/:id', async (request, response, _next) => {
 
 app.put('/users/:id', async (request, response, next) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+	if (request.body.data == null) {
+		return response.sendStatus(403);
+	}
 
 	const id = parseInt(request.params.id);
 	const { name, password } = request.body.data;
