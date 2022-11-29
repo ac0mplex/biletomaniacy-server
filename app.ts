@@ -2,6 +2,7 @@
 
 import * as password_utils from './password_utils.js';
 import connect_pg_simple from 'connect-pg-simple';
+import cors from 'cors';
 import express from 'express';
 import fs from 'fs';
 import pg from 'pg';
@@ -24,6 +25,7 @@ const port = 3019;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
 const pool = new pg.Pool({
 	database: 'biletomaniacy'
@@ -38,7 +40,9 @@ app.use(
 );
 
 app.post('/register', async (request, response) => {
-	const { name, password } = request.body;
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+	const { name, password } = request.body.data;
 
 	if (name == null || password == null) {
 		return response.sendStatus(403);
@@ -72,7 +76,9 @@ app.post('/register', async (request, response) => {
 });
 
 app.post('/login', async (request, response) => {
-	const { name, password } = request.body;
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+	const { name, password } = request.body.data;
 
 	if (name == null || password == null) {
 		return response.sendStatus(403);
@@ -111,6 +117,8 @@ app.post('/login', async (request, response) => {
 });
 
 app.post('/logout', async (request, response, next) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
 	request.session.destroy((error) => {
 		if (error) {
 			next(error);
@@ -121,6 +129,8 @@ app.post('/logout', async (request, response, next) => {
 });
 
 app.get('/users', async (_request, response, next) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
 	pool.query('SELECT id, name, admin FROM "user"', (error, results) => {
 		if (error) {
 			next(error);
@@ -131,6 +141,8 @@ app.get('/users', async (_request, response, next) => {
 });
 
 app.get('/users/:id', async (request, response, _next) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
 	const id = parseInt(request.params.id);
 
 	pool.query('SELECT id, name, admin FROM "user" where id = $1', [id], (error, results) => {
@@ -143,8 +155,10 @@ app.get('/users/:id', async (request, response, _next) => {
 });
 
 app.put('/users/:id', async (request, response, next) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
 	const id = parseInt(request.params.id);
-	const { name, password } = request.body;
+	const { name, password } = request.body.data;
 
 	pool.query('SELECT id, name, password, salt FROM "user" where id = $1', [id], (error, results) => {
 		if (error || results.rows.length == 0) {
@@ -178,6 +192,8 @@ app.put('/users/:id', async (request, response, next) => {
 });
 
 app.get('/concerts', async (_request, response, next) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
 	pool.query('SELECT * FROM concert', (error, results) => {
 		if (error) {
 			next(error);
@@ -188,6 +204,8 @@ app.get('/concerts', async (_request, response, next) => {
 });
 
 app.get('/concerts/:id', async (request, response, next) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
 	const id = parseInt(request.params.id);
 
 	pool.query('SELECT * FROM concert where id = $1', [id], (error, results) => {
@@ -200,6 +218,8 @@ app.get('/concerts/:id', async (request, response, next) => {
 });
 
 app.get('/tickets/:concert_id', async (_request, response, next) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
 	pool.query('SELECT * FROM ticket', (error, results) => {
 		if (error) {
 			next(error);
