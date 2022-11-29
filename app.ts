@@ -1,6 +1,6 @@
 // TODO: github.com/tsconfig/bases
 
-import crypto from 'crypto';
+import * as password_utils from './password_utils.js';
 import connect_pg_simple from 'connect-pg-simple';
 import express from 'express';
 import fs from 'fs';
@@ -45,14 +45,11 @@ app.post('/register', async (request, response) => {
 	}
 
 	try {
-		const salt = crypto.randomBytes(16).toString('base64');
-		// Based on recommendations by OWASP:
-		// https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
-		const hash = crypto.pbkdf2Sync(password, salt, 310000, 32, 'sha256').toString('base64');
+		const result = password_utils.hash(password);
 
 		const data = await pool.query(
 			'INSERT INTO "user" (name, password, salt) VALUES ($1, $2, $3) RETURNING *',
-			[name, hash, salt]
+			[name, result.hash, result.salt]
 		);
 
 		if (data.rows.length == 0) {
@@ -92,13 +89,9 @@ app.post('/login', async (request, response) => {
 		}
 
 		const user = data.rows[0];
-
-		// Based on recommendations by OWASP:
-		// https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
-		const hash = crypto.pbkdf2Sync(password, user.salt, 310000, 32, 'sha256');
-		const db_hash = Buffer.from(user.password, 'base64');
-
-		const validPassword = crypto.timingSafeEqual(db_hash, hash);
+		const validPassword = password_utils.compare(
+			password, user.salt, user.password
+		);
 
 		if (!validPassword) {
 			return response.sendStatus(403);
@@ -132,20 +125,55 @@ app.get('/users', async (_request, response, next) => {
 		if (error) {
 			next(error);
 		} else {
-			response.json({ data: results.rows });
+			response.json(results.rows);
 		}
 	});
 });
 
-app.get('/users/:id', async (request, response, next) => {
+app.get('/users/:id', async (request, response, _next) => {
 	const id = parseInt(request.params.id);
 
 	pool.query('SELECT id, name, admin FROM "user" where id = $1', [id], (error, results) => {
-		if (error) {
-			next(error);
+		if (error || results.rows.length == 0) {
+			response.sendStatus(403);
 		} else {
-			response.json({ data: results.rows });
+			response.json(results.rows[0]);
 		}
+	});
+});
+
+app.put('/users/:id', async (request, response, next) => {
+	const id = parseInt(request.params.id);
+	const { name, password } = request.body;
+
+	pool.query('SELECT id, name, password, salt FROM "user" where id = $1', [id], (error, results) => {
+		if (error || results.rows.length == 0) {
+			return response.sendStatus(403);
+		}
+
+		var user = results.rows[0]
+
+		if (name != null) {
+			user.name = name;
+		}
+
+		if (password != null) {
+			const result = password_utils.hash(password);
+			user.password = result.hash;
+			user.salt = result.salt;
+		}
+
+		pool.query(
+			'UPDATE "user" SET name = $1, password = $2, salt = $3 WHERE id = $4',
+			[ user.name, user.password, user.salt, id ],
+			(error, _results) => {
+				if (error) {
+					next(error);
+				} else {
+					response.sendStatus(200);
+				}
+			}
+		);
 	});
 });
 
