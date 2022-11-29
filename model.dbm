@@ -3,7 +3,7 @@
 CAUTION: Do not modify this file unless you know what you are doing.
  Unexpected results may occur if the code is changed deliberately.
 -->
-<dbmodel pgmodeler-ver="1.0.0-beta" use-changelog="false" last-position="0,105" last-zoom="1" max-obj-count="4"
+<dbmodel pgmodeler-ver="1.0.0-beta" use-changelog="false" last-position="0,103" last-zoom="1" max-obj-count="4"
 	 default-schema="public" default-owner="postgres"
 	 default-tablespace="pg_default"
 	 layers="Default layer"
@@ -23,7 +23,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<tablespace name="pg_default"/>
 	<position x="80" y="220"/>
 	<column name="id" not-null="true">
-		<type name="serial" length="0"/>
+		<type name="character" length="36"/>
 	</column>
 	<column name="name" not-null="true">
 		<type name="text" length="0"/>
@@ -89,7 +89,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 		<type name="integer" length="0"/>
 	</column>
 	<column name="user_id">
-		<type name="integer" length="0"/>
+		<type name="character" length="36"/>
 	</column>
 	<constraint name="ticket_pk" type="pk-constr" table="public.ticket">
 		<columns names="id" ref-type="src-columns"/>

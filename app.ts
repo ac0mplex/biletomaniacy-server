@@ -54,10 +54,11 @@ app.post('/register', async (request, response) => {
 
 	try {
 		const result = password_utils.hash(password);
+		const id = crypto.randomUUID();
 
 		const data = await pool.query(
-			'INSERT INTO "user" (name, password, salt) VALUES ($1, $2, $3) RETURNING *',
-			[name, result.hash, result.salt]
+			'INSERT INTO "user" (id, name, password, salt) VALUES ($1, $2, $3, $4) RETURNING *',
+			[id, name, result.hash, result.salt]
 		);
 
 		if (data.rows.length == 0) {

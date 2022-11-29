@@ -19,7 +19,7 @@ CREATE DATABASE biletomaniacy
 -- object: public."user" | type: TABLE --
 -- DROP TABLE IF EXISTS public."user";
 CREATE TABLE public."user" (
-	id serial NOT NULL,
+	id character(36) NOT NULL,
 	name text NOT NULL,
 	password text NOT NULL,
 	salt text NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE public.ticket (
 	"column" integer,
 	payed boolean NOT NULL DEFAULT false,
 	concert_id integer NOT NULL,
-	user_id integer,
+	user_id character(36),
 	CONSTRAINT ticket_pk PRIMARY KEY (id)
 )
 TABLESPACE pg_default;
