@@ -1,11 +1,13 @@
 // TODO: github.com/tsconfig/bases
 
-import * as password_utils from './password_utils.js';
+import * as concerts from './data/concerts.js';
+import * as tickets from './data/tickets.js';
+import * as users from './data/users.js';
 import connect_pg_simple from 'connect-pg-simple';
 import cors from 'cors';
 import express from 'express';
 import fs from 'fs';
-import pg from 'pg';
+import pool from './data/pool.js';
 import session from 'express-session';
 
 interface User {
@@ -27,9 +29,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-const pool = new pg.Pool({
-	database: 'biletomaniacy'
-});
 const PGStore = connect_pg_simple(session);
 
 app.use(
@@ -52,32 +51,16 @@ app.post('/register', async (request, response) => {
 		return response.sendStatus(403);
 	}
 
-	try {
-		const result = password_utils.hash(password);
-		const id = crypto.randomUUID();
-
-		const data = await pool.query(
-			'INSERT INTO "user" (id, name, password, salt) VALUES ($1, $2, $3, $4) RETURNING *',
-			[id, name, result.hash, result.salt]
-		);
-
-		if (data.rows.length == 0) {
-			return response.sendStatus(403);
-		}
-
-		const user = data.rows[0];
-
-		request.session.user = {
-			id: user.id,
-			name: user.name,
-		};
-
-		response.status(200);
-		return response.json({ user: request.session.user });
-	} catch (e) {
-		console.error(e);
-		return response.sendStatus(403);
-	}
+	users.createUser(name, password)
+		.then((user) => {
+			request.session.user = {
+				id: user.id,
+				name: user.name,
+			};
+			response.status(200);
+			response.json({ user: request.session.user });
+		})
+		.catch(() => { response.sendStatus(403); });
 });
 
 app.post('/login', async (request, response) => {
@@ -93,36 +76,16 @@ app.post('/login', async (request, response) => {
 		return response.sendStatus(403);
 	}
 
-	try {
-		const data = await pool.query(
-			'SELECT id, name, password, salt FROM "user" WHERE name = $1',
-			[name]
-		);
-
-		if (data.rows.length == 0) {
-			return response.sendStatus(403);
-		}
-
-		const user = data.rows[0];
-		const validPassword = password_utils.compare(
-			password, user.salt, user.password
-		);
-
-		if (!validPassword) {
-			return response.sendStatus(403);
-		}
-
-		request.session.user = {
-			id: user.id,
-			name: user.name
-		};
-
-		response.status(200);
-		return response.json({ user: request.session.user });
-	} catch(e) {
-		console.error(e);
-		return response.sendStatus(403);
-	};
+	users.logInAs(name, password)
+		.then((user) => {
+			request.session.user = {
+				id: user.id,
+				name: user.name
+			};
+			response.status(200);
+			response.json({ user: request.session.user });
+		})
+		.catch(() => { response.sendStatus(403); });
 });
 
 app.post('/logout', async (request, response, next) => {
@@ -137,109 +100,73 @@ app.post('/logout', async (request, response, next) => {
 	});
 });
 
-app.get('/users', async (_request, response, next) => {
+app.get('/users', async (_request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
-	pool.query('SELECT id, name, admin FROM "user"', (error, results) => {
-		if (error) {
-			next(error);
-		} else {
-			response.json(results.rows);
-		}
-	});
+	users.getUsers()
+		.then((users) => { response.json(users); })
+		.catch(() => { response.sendStatus(403); });
 });
 
-app.get('/users/:id', async (request, response, _next) => {
+app.get('/users/:id', async (request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
-	const id = parseInt(request.params.id);
+	const id = request.params.id;
 
-	pool.query('SELECT id, name, admin FROM "user" where id = $1', [id], (error, results) => {
-		if (error || results.rows.length == 0) {
-			response.sendStatus(403);
-		} else {
-			response.json(results.rows[0]);
-		}
-	});
+	users.getUserByID(id)
+		.then((user) => { response.json(user); })
+		.catch(() => { response.sendStatus(403); });
 });
 
-app.put('/users/:id', async (request, response, next) => {
+app.patch('/users/:id', async (request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
 	if (request.body.data == null) {
 		return response.sendStatus(403);
 	}
 
-	const id = parseInt(request.params.id);
+	const id = request.params.id;
 	const { name, password } = request.body.data;
 
-	pool.query('SELECT id, name, password, salt FROM "user" where id = $1', [id], (error, results) => {
-		if (error || results.rows.length == 0) {
-			return response.sendStatus(403);
-		}
-
-		var user = results.rows[0]
-
-		if (name != null) {
-			user.name = name;
-		}
-
-		if (password != null) {
-			const result = password_utils.hash(password);
-			user.password = result.hash;
-			user.salt = result.salt;
-		}
-
-		pool.query(
-			'UPDATE "user" SET name = $1, password = $2, salt = $3 WHERE id = $4',
-			[ user.name, user.password, user.salt, id ],
-			(error, _results) => {
-				if (error) {
-					next(error);
-				} else {
-					response.sendStatus(200);
-				}
-			}
-		);
-	});
+	users.editUser(id, name, password)
+		.then(() => { response.sendStatus(200); })
+		.catch(() => { response.sendStatus(403); });
 });
 
-app.get('/concerts', async (_request, response, next) => {
+app.get('/concerts', async (_request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
-	pool.query('SELECT * FROM concert', (error, results) => {
-		if (error) {
-			next(error);
-		} else {
-			response.json({ data: results.rows });
-		}
-	});
+	concerts.getConcerts()
+		.then((concerts) => { response.json(concerts); })
+		.catch(() => { response.sendStatus(403); });
 });
 
-app.get('/concerts/:id', async (request, response, next) => {
+app.get('/concerts/:id', async (request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
 	const id = parseInt(request.params.id);
 
-	pool.query('SELECT * FROM concert where id = $1', [id], (error, results) => {
-		if (error) {
-			next(error);
-		} else {
-			response.json({ data: results.rows });
-		}
-	});
+	if (isNaN(id)) {
+		return response.sendStatus(403);
+	}
+
+	concerts.getConcertByID(id)
+		.then((concert) => { response.json(concert); })
+		.catch(() => { response.sendStatus(403); });
 });
 
-app.get('/tickets/:concert_id', async (_request, response, next) => {
+app.get('/tickets/:concert_id', async (request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
-	pool.query('SELECT * FROM ticket', (error, results) => {
-		if (error) {
-			next(error);
-		} else {
-			response.json({ data: results.rows });
-		}
-	});
+	const id = parseInt(request.params.concert_id);
+
+	if (isNaN(id)) {
+		return response.sendStatus(403);
+	}
+
+	tickets.getTicketsByConcertID(id)
+		.then((tickets) => { response.json(tickets); })
+		.catch(() => { response.sendStatus(403); });
 });
 
 app.listen(port, () => {
