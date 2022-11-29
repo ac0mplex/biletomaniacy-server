@@ -1,8 +1,13 @@
 import * as password_utils from '../password_utils.js';
 import pool from './pool.js';
+import { getIfValid, update } from './utils.js';
 
 export async function createUser(name: string, password: string): Promise<any> {
 	return new Promise((resolve, reject) => {
+		if (!validateName(name) || !validatePassword(password)) {
+			return reject();
+		}
+
 		const result = password_utils.hash(password);
 		const id = crypto.randomUUID();
 
@@ -23,6 +28,10 @@ export async function createUser(name: string, password: string): Promise<any> {
 
 export async function logInAs(name: string, password: string): Promise<any> {
 	return new Promise((resolve, reject) => {
+		if (!validateName(name) || !validatePassword(password)) {
+			return reject();
+		}
+
 		pool.query(
 			'SELECT id, name, password, salt FROM "user" WHERE name = $1',
 			[name],
@@ -92,14 +101,25 @@ export async function editUser(
 
 				var user = results.rows[0]
 
-				if (name != null) {
-					user.name = name;
+				if (!update(user, "name", name, validateName)) {
+					return reject();
 				}
 
-				if (password != null) {
-					const result = password_utils.hash(password);
-					user.password = result.hash;
-					user.salt = result.salt;
+				if (!update(user, "password", password, validatePassword)) {
+					return reject();
+				}
+
+				const isPasswordValid = getIfValid(
+					password,
+					validatePassword,
+					(validPassword) => {
+						const result = password_utils.hash(validPassword);
+						user.password = result.hash;
+						user.salt = result.salt;
+					}
+				);
+				if (!isPasswordValid) {
+					return reject();
 				}
 
 				pool.query(
@@ -117,4 +137,12 @@ export async function editUser(
 			}
 		);
 	});
+}
+
+function validateName(name: string): boolean {
+	return name != null && name.length > 0;
+}
+
+function validatePassword(password: string): boolean {
+	return password != null && password.length > 0;
 }

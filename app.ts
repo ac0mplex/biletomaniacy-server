@@ -9,6 +9,7 @@ import express from 'express';
 import fs from 'fs';
 import pool from './data/pool.js';
 import session from 'express-session';
+import { parseDate } from './date_utils.js';
 
 interface User {
 	id: number;
@@ -47,10 +48,6 @@ app.post('/register', async (request, response) => {
 
 	const { name, password } = request.body.data;
 
-	if (name == null || password == null) {
-		return response.sendStatus(403);
-	}
-
 	users.createUser(name, password)
 		.then((user) => {
 			request.session.user = {
@@ -71,10 +68,6 @@ app.post('/login', async (request, response) => {
 	}
 
 	const { name, password } = request.body.data;
-
-	if (name == null || password == null) {
-		return response.sendStatus(403);
-	}
 
 	users.logInAs(name, password)
 		.then((user) => {
@@ -141,6 +134,25 @@ app.get('/concerts', async (_request, response) => {
 		.catch(() => { response.sendStatus(403); });
 });
 
+app.post('/concerts', async (request, response) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+	if (request.body.data == null) {
+		return response.sendStatus(403);
+	}
+
+	const { name, date, location } = request.body.data;
+	const parsedDate = parseDate(date);
+
+	if (parsedDate == null) {
+		return response.sendStatus(403);
+	}
+
+	concerts.createConcert(name, parsedDate, location)
+		.then((concert) => { response.json(concert); })
+		.catch(() => { response.sendStatus(403); });
+});
+
 app.get('/concerts/:id', async (request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
@@ -152,6 +164,37 @@ app.get('/concerts/:id', async (request, response) => {
 
 	concerts.getConcertByID(id)
 		.then((concert) => { response.json(concert); })
+		.catch(() => { response.sendStatus(403); });
+});
+
+
+app.patch('/concerts/:id', async (request, response) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+	const id = parseInt(request.params.id);
+
+	if (isNaN(id)) {
+		return response.sendStatus(403);
+	}
+
+	if (request.body.data == null) {
+		return response.sendStatus(403);
+	}
+
+	const { name, date, location } = request.body.data;
+
+	let parsedDate = null;
+
+	if (date != null) {
+		parsedDate = parseDate(date);
+
+		if (parsedDate == null) {
+			return response.sendStatus(403);
+		}
+	}
+
+	concerts.editConcert(id, name, parsedDate, location)
+		.then(() => { response.sendStatus(200); })
 		.catch(() => { response.sendStatus(403); });
 });
 
