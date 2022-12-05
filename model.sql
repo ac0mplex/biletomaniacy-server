@@ -1,5 +1,5 @@
 -- Database generated with pgModeler (PostgreSQL Database Modeler).
--- pgModeler version: 1.0.0-beta
+-- pgModeler version: 1.0.0-beta1
 -- PostgreSQL version: 15.0
 -- Project Site: pgmodeler.io
 -- Model Author: ---
@@ -55,7 +55,7 @@ CREATE TABLE public.ticket (
 	"column" integer,
 	payed boolean NOT NULL DEFAULT false,
 	concert_id integer NOT NULL,
-	user_id character(36),
+	user_id character(36) DEFAULT null,
 	CONSTRAINT ticket_pk PRIMARY KEY (id)
 )
 TABLESPACE pg_default;

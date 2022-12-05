@@ -198,17 +198,43 @@ app.patch('/concerts/:id', async (request, response) => {
 		.catch(() => { response.sendStatus(403); });
 });
 
-app.get('/tickets/:concert_id', async (request, response) => {
+app.get('/tickets', async (_request, response) => {
 	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
 
-	const id = parseInt(request.params.concert_id);
+	tickets.getTickets()
+		.then((tickets) => { response.json(tickets); })
+		.catch(() => { response.sendStatus(403); });
+});
+
+app.post('/tickets', async (request, response) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+	if (request.body.data == null) {
+		return response.sendStatus(403);
+	}
+
+	const { concert_id, row, column } = request.body.data;
+
+	if (typeof concert_id != "number") response.sendStatus(403);
+	if (typeof row != "number") response.sendStatus(403);
+	if (typeof column != "number") response.sendStatus(403);
+
+	tickets.createTicket(concert_id, row, column)
+		.then((ticket) => { response.json(ticket); })
+		.catch(() => { response.sendStatus(403); });
+});
+
+app.get('/tickets/:id', async (request, response) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+	const id = parseInt(request.params.id);
 
 	if (isNaN(id)) {
 		return response.sendStatus(403);
 	}
 
-	tickets.getTicketsByConcertID(id)
-		.then((tickets) => { response.json(tickets); })
+	tickets.getTicketByID(id)
+		.then((ticket) => { response.json(ticket); })
 		.catch(() => { response.sendStatus(403); });
 });
 

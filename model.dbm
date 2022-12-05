@@ -3,7 +3,7 @@
 CAUTION: Do not modify this file unless you know what you are doing.
  Unexpected results may occur if the code is changed deliberately.
 -->
-<dbmodel pgmodeler-ver="1.0.0-beta" use-changelog="false" last-position="0,103" last-zoom="1" max-obj-count="4"
+<dbmodel pgmodeler-ver="1.0.0-beta1" use-changelog="false" last-position="0,102" last-zoom="1" max-obj-count="4"
 	 default-schema="public" default-owner="postgres"
 	 default-tablespace="pg_default"
 	 layers="Default layer"
@@ -88,7 +88,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="concert_id" not-null="true">
 		<type name="integer" length="0"/>
 	</column>
-	<column name="user_id">
+	<column name="user_id" default-value="null">
 		<type name="character" length="36"/>
 	</column>
 	<constraint name="ticket_pk" type="pk-constr" table="public.ticket">
