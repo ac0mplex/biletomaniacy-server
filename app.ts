@@ -215,9 +215,15 @@ app.post('/tickets', async (request, response) => {
 
 	const { concert_id, row, column } = request.body.data;
 
-	if (typeof concert_id != "number") response.sendStatus(403);
-	if (typeof row != "number") response.sendStatus(403);
-	if (typeof column != "number") response.sendStatus(403);
+	if (typeof concert_id != "number") {
+		return response.sendStatus(403);
+	}
+	if (typeof row != "number") {
+		return response.sendStatus(403);
+	}
+	if (typeof column != "number") {
+		return response.sendStatus(403);
+	}
 
 	tickets.createTicket(concert_id, row, column)
 		.then((ticket) => { response.json(ticket); })
