@@ -90,10 +90,11 @@ export async function editUser(
 	id: string,
 	name: string,
 	password: string,
+	admin: boolean
 ): Promise<void> {
 	return new Promise(async (resolve, reject) => {
 		pool.query(
-			'SELECT id, name, password, salt FROM "user" where id = $1',
+			'SELECT * FROM "user" where id = $1',
 			[id], (error, results) => {
 				if (error || results.rows.length == 0) {
 					return reject();
@@ -122,10 +123,14 @@ export async function editUser(
 					return reject();
 				}
 
+				if (!update(user, "admin", admin, validateAdmin)) {
+					return reject();
+				}
+
 				pool.query(
-					'UPDATE "user" SET name = $1, password = $2, salt = $3 ' +
-					'WHERE id = $4',
-					[ user.name, user.password, user.salt, id ],
+					'UPDATE "user" SET name = $1, password = $2, salt = $3, admin = $4 ' +
+					'WHERE id = $5',
+					[ user.name, user.password, user.salt, user.admin, id ],
 					(error, _results) => {
 						if (error) {
 							reject(error);
@@ -145,4 +150,8 @@ function validateName(name: string): boolean {
 
 function validatePassword(password: string): boolean {
 	return password != null && password.length > 0;
+}
+
+function validateAdmin(admin: boolean): boolean {
+	return admin != null;
 }

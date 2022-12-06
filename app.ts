@@ -119,9 +119,11 @@ app.patch('/users/:id', async (request, response) => {
 	}
 
 	const id = request.params.id;
-	const { name, password } = request.body.data;
+	const { admin, name, password } = request.body.data;
 
-	users.editUser(id, name, password)
+	if (typeof admin != "boolean") return response.sendStatus(403);
+
+	users.editUser(id, name, password, admin)
 		.then(() => { response.sendStatus(200); })
 		.catch(() => { response.sendStatus(403); });
 });
