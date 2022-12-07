@@ -1,6 +1,7 @@
 // TODO: github.com/tsconfig/bases
 
 import * as concerts from './data/concerts.js';
+import * as election from './data/election.js';
 import * as tickets from './data/tickets.js';
 import * as users from './data/users.js';
 import connect_pg_simple from 'connect-pg-simple';
@@ -244,6 +245,39 @@ app.get('/tickets/:id', async (request, response) => {
 	tickets.getTicketByID(id)
 		.then((ticket) => { response.json(ticket); })
 		.catch(() => { response.sendStatus(403); });
+});
+
+app.patch('/tickets/:id', async (request, response) => {
+	response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+	const ticketID = parseInt(request.params.id);
+
+	if (isNaN(ticketID)) {
+		return response.sendStatus(403);
+	}
+
+	if (request.body.data == null) {
+		return response.sendStatus(403);
+	}
+
+	const { user_id, payed } = request.body.data;
+
+	if (user_id != null && typeof user_id != "string") return response.sendStatus(403);
+	if (payed != null && typeof payed != "boolean") return response.sendStatus(403);
+
+	if (payed != null && payed) {
+		if (user_id == null) return response.sendStatus(403);
+
+		election.payForTicketByUser(ticketID, user_id)
+			.then(() => { response.sendStatus(200); })
+			.catch(() => { response.sendStatus(403); });
+	} else {
+		if (user_id == null) return response.sendStatus(403);
+
+		election.reserveTicketForUser(ticketID, user_id)
+			.then(() => { response.sendStatus(200); })
+			.catch(() => { response.sendStatus(403); });
+	}
 });
 
 app.listen(port, () => {
