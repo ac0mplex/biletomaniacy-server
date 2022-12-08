@@ -1,18 +1,19 @@
 import pool from './pool.js';
 import { Mutex } from 'async-mutex';
 
-const reservations: Reservation[] = []
-const mutex = new Mutex();
-
-const maxReservationTimeSeconds = 300;
-
 class Reservation {
 	ticketID: number;
 	userID: string;
 	timestamp: number;
 };
 
+const reservations: Reservation[] = []
+const mutex = new Mutex();
+
+const maxReservationTimeSeconds = 300;
+
 removeExpiredReservations();
+reportStatus();
 
 
 export async function reserveTicketForUser(ticketID: any, userID: string): Promise<void> {
@@ -23,7 +24,6 @@ export async function reserveTicketForUser(ticketID: any, userID: string): Promi
 	if (!await checkIfUserExists(userID)) {
 		return Promise.reject();
 	}
-
 
 	return mutex.runExclusive(async() => {
 		const found = reservations.find(
@@ -105,8 +105,6 @@ async function removeExpiredReservations() {
 
 		reservations.length = j;
 
-		console.log(`removeExpiredReservations: ${ticketIDsToRelease.length} removed`);
-
 		try {
 			await pool.query(
 				'UPDATE ticket SET user_id = null WHERE id = ANY($1)',
@@ -118,6 +116,23 @@ async function removeExpiredReservations() {
 	});
 
 	setTimeout(removeExpiredReservations, 5000);
+}
+
+async function reportStatus() {
+	await mutex.runExclusive(async () => {
+		const currentTime = new Date(Date.now());
+		console.log(`[${currentTime.toLocaleTimeString()}] Reservations in progress: ${reservations.length}`);
+
+		for (const reservation of reservations) {
+			const ticketID = reservation.ticketID;
+			const userID = reservation.userID;
+			const elapsedSeconds = (Date.now() - reservation.timestamp) / 1000;
+			const remainingTime = maxReservationTimeSeconds - elapsedSeconds;
+			console.log(`{ ticketID: ${ticketID}, userID: ${userID}, remainingTime: ${remainingTime}s}`);
+		}
+	});
+
+	setTimeout(reportStatus, 5000);
 }
 
 async function checkIfTicketReadyToReserve(ticketID: number): Promise<boolean> {
