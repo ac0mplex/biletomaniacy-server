@@ -25,7 +25,6 @@ declare module 'express-session' {
 
 const env = JSON.parse(fs.readFileSync('./env.json', 'utf8'));
 const app = express();
-const port = 3019;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -280,6 +279,4 @@ app.patch('/tickets/:id', async (request, response) => {
 	}
 });
 
-app.listen(port, () => {
-	console.log(`I'm listening on port ${port}`);
-});
+export { app };
