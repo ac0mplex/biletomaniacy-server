@@ -7,9 +7,9 @@ import * as users from './data/users.js';
 import connect_pg_simple from 'connect-pg-simple';
 import cors from 'cors';
 import express from 'express';
-import fs from 'fs';
 import pool from './data/pool.js';
 import session from 'express-session';
+import { env } from './env.js';
 import { parseDate } from './date_utils.js';
 
 interface User {
@@ -23,7 +23,6 @@ declare module 'express-session' {
     }
 }
 
-const env = JSON.parse(fs.readFileSync('./env.json', 'utf8'));
 const app = express();
 
 app.use(express.json());
