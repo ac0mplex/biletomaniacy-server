@@ -2,6 +2,37 @@ import * as password_utils from '../password_utils.js';
 import pool from './pool.js';
 import { getIfValid, update } from './utils.js';
 
+export async function createDefaultAdminIfNecessary(): Promise<any> {
+	return new Promise((resolve, reject) => {
+		pool.query(
+			'SELECT * FROM "user" WHERE admin = true',
+			async (error, results) => {
+				if (error) {
+					return reject(error);
+				}
+
+				if (results.rows.length > 0) {
+					return resolve("No need to create admin");
+				}
+
+				const user = await createUser("admin", "admin");
+
+				pool.query(
+					'UPDATE "user" SET admin = true WHERE id = $1',
+					[ user.id ],
+					(error, _results) => {
+						if (error) {
+							reject(error);
+						} else {
+							resolve("Default admin created successfully");
+						}
+					}
+				);
+			}
+		);
+	});
+}
+
 export async function createUser(name: string, password: string): Promise<any> {
 	return new Promise((resolve, reject) => {
 		if (!validateName(name) || !validatePassword(password)) {
