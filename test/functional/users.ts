@@ -1,4 +1,4 @@
-import pool from '../src/data/pool.js';
+import pool from '../../src/data/pool.js';
 import { expect } from 'chai';
 import request from 'supertest';
 
@@ -13,7 +13,7 @@ describe('Users route', () => {
 	let app: Express.Application
 
 	before('Initialize app', async () => {
-		let importedApp = await import('../src/app.js');
+		let importedApp = await import('../../src/app.js');
 		app = importedApp.app;
 	});
 
